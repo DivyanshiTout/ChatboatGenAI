@@ -19,6 +19,10 @@ chat_session = MODEL.start_chat(history=[])
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend communication
 
+UPLOAD_DIR = "data/uploaded_files"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs("data", exist_ok=True)
+
 def read_file_content(file_path: str) -> str:
     if file_path.endswith(".txt"):
         return Path(file_path).read_text(encoding="utf-8")
@@ -52,7 +56,7 @@ def chat():
     context = merge_all_files(files)
     
     base_instruction = f"""
-        You are an assistant that only answers based on the following content.
+        You are an assistant that only answers based on the following content and you give the response very fast within seconds.
         If a user greets you, reply politely.
         If the question isn't covered, respond: " I couldn't find an answer for that topic.You can reach our support team directly for further help."
         Content:
@@ -65,6 +69,38 @@ def chat():
         return jsonify({"response": response.text})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ✅ New API: Upload documents
+@app.route("/api/upload", methods=["POST"])
+def upload_document():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+    
+    file = request.files["file"]
+    
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    if not file.filename.lower().endswith((".pdf", ".docx", ".txt")):
+        return jsonify({"error": "Unsupported file type"}), 400
+
+    filename = file.filename
+    save_path = os.path.join(UPLOAD_DIR, filename)
+    file.save(save_path)
+
+    # Add to file_list.txt if not already listed
+    file_list_path = "data/file_list.txt"
+    if os.path.exists(file_list_path):
+        with open(file_list_path, "r") as f:
+            existing = f.read().splitlines()
+    else:
+        existing = []
+
+    if filename not in existing:
+        with open(file_list_path, "a") as f:
+            f.write(filename + "\n")
+
+    return jsonify({"message": f"File '{filename}' uploaded successfully."})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Default to port 5000 if not set

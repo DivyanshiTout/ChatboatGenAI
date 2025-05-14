@@ -1,9 +1,10 @@
 # app.py
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,render_template, redirect, url_for, flash
 from flask_cors import CORS
 from pathlib import Path
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
 import google.generativeai as gen_ai
 
 load_dotenv()
@@ -20,8 +21,11 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend communication
 
 UPLOAD_DIR = "data/uploaded_files"
+FILE_LIST_PATH = "data/file_list.txt"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs("data", exist_ok=True)
+app.secret_key = "secret"  # Required for flashing messages
+app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
 
 def read_file_content(file_path: str) -> str:
     if file_path.endswith(".txt"):
@@ -56,7 +60,7 @@ def chat():
     context = merge_all_files(files)
     
     base_instruction = f"""
-        You are an assistant that only answers based on the following content and you give the response very fast within seconds.
+        You are an assistant that only answers based on the following content.
         If a user greets you, reply politely.
         If the question isn't covered, respond: " I couldn't find an answer for that topic.You can reach our support team directly for further help."
         Content:
@@ -70,38 +74,84 @@ def chat():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ✅ New API: Upload documents
+
 @app.route("/api/upload", methods=["POST"])
 def upload_document():
     if "file" not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
-    
-    file = request.files["file"]
-    
-    if file.filename == "":
+        return jsonify({"error": "No files part in the request"}), 400
+
+    files = request.files.getlist("file")
+
+    if not files:
         return jsonify({"error": "No file selected"}), 400
 
-    if not file.filename.lower().endswith((".pdf", ".docx", ".txt")):
-        return jsonify({"error": "Unsupported file type"}), 400
+    uploaded_files = []
+    unsupported_files = []
 
-    filename = file.filename
-    save_path = os.path.join(UPLOAD_DIR, filename)
-    file.save(save_path)
+    for file in files:
+        if file and file.filename.lower().endswith((".pdf", ".docx", ".txt")):
+            filename = secure_filename(file.filename)
+            save_path = os.path.join(UPLOAD_DIR, filename)
+            file.save(save_path)
+            uploaded_files.append(filename)
 
-    # Add to file_list.txt if not already listed
-    file_list_path = "data/file_list.txt"
-    if os.path.exists(file_list_path):
-        with open(file_list_path, "r") as f:
-            existing = f.read().splitlines()
-    else:
-        existing = []
+            # Update file_list.txt
+            if os.path.exists(FILE_LIST_PATH):
+                with open(FILE_LIST_PATH, "r") as f:
+                    existing = f.read().splitlines()
+            else:
+                existing = []
 
-    if filename not in existing:
-        with open(file_list_path, "a") as f:
-            f.write(filename + "\n")
+            if filename not in existing:
+                with open(FILE_LIST_PATH, "a") as f:
+                    f.write(filename + "\n")
+        else:
+            unsupported_files.append(file.filename)
+    print(len(uploaded_files))
+    return jsonify({
+        "uploaded": uploaded_files,
+        "unsupported": unsupported_files
+    }), 200
 
-    return jsonify({"message": f"File '{filename}' uploaded successfully."})
+# ✅ Admin UI
+@app.route("/", methods=["GET", "POST"])
+def admin_upload_ui():
+    if request.method == "POST":
+        files = request.files.getlist("file")
+        
+        if not files:
+            flash("No files selected.")
+            return redirect(request.url)
 
+        uploaded_files = []
+        unsupported_files = []
+        
+        for file in files:
+            if file.filename.lower().endswith((".pdf", ".docx", ".txt")):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(UPLOAD_DIR, filename))
+                uploaded_files.append(filename)
+
+                # Update file_list.txt
+                if os.path.exists(FILE_LIST_PATH):
+                    with open(FILE_LIST_PATH, "r") as f:
+                        existing = f.read().splitlines()
+                else:
+                    existing = []
+
+                if filename not in existing:
+                    with open(FILE_LIST_PATH, "a") as f:
+                        f.write(filename + "\n")
+            else:
+                unsupported_files.append(file.filename)
+
+        if uploaded_files:
+            flash(f"Files uploaded successfully: {', '.join(uploaded_files)}")
+        if unsupported_files:
+            flash(f"Unsupported files: {', '.join(unsupported_files)}")
+
+        return redirect(url_for("admin_upload_ui"))
+    return render_template("upload.html")
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Default to port 5000 if not set
     app.run(debug=True, host="0.0.0.0", port=port)

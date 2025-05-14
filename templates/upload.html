@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Document Upload</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Admin - Upload Document</h2>
+
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <ul>
+            {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
+
+        <form method="POST" enctype="multipart/form-data">
+            <div class="upload-box">
+                <img src="https://cdn-icons-png.flaticon.com/512/716/716784.png" alt="folder icon">
+                <h3>Drop files here</h3>
+                <p>Supported formats: PDF, DOCX, TXT (Max 5MB each)</p>
+                <label for="fileUpload">Browse Files</label>
+                <input id="fileUpload" type="file" name="file" multiple accept=".pdf,.docx,.txt" required>
+            </div>
+            <div>
+                <button type="submit">Upload</button>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>

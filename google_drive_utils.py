@@ -4,13 +4,14 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload,MediaIoBaseDownload
 from dotenv import load_dotenv
 from io import BytesIO
+import json
 load_dotenv()
 
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
-SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
-
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+# SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
+service_account_info = json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
+credentials = service_account.Credentials.from_service_account_info(
+    service_account_info, scopes=SCOPES
 )
 drive_service = build('drive', 'v3', credentials=credentials)
 

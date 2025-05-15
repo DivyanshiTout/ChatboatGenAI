@@ -1,12 +1,14 @@
-# app.py
 import os
-from flask import Flask, request, jsonify,render_template, redirect, url_for, flash
+import mimetypes
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_cors import CORS
-from pathlib import Path
-from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+from google_drive_utils import upload_file_to_drive, list_files_from_drive,download_file_from_drive
+from dotenv import load_dotenv
+from PyPDF2 import PdfReader
+from docx import Document
+from io import BytesIO
 import google.generativeai as gen_ai
-
 load_dotenv()
 API_KEY = os.getenv("GOOGLE_API_KEY")
 
@@ -18,70 +20,60 @@ MODEL = gen_ai.GenerativeModel('gemini-2.0-flash')
 chat_session = MODEL.start_chat(history=[])
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend communication
+CORS(app)
+app.secret_key = "secret"
 
-UPLOAD_DIR = "data/uploaded_files"
-FILE_LIST_PATH = "data/file_list.txt"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs("data", exist_ok=True)
-app.secret_key = "secret"  # Required for flashing messages
-app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
 
-def read_file_content(file_path: str) -> str:
-    if file_path.endswith(".txt"):
-        return Path(file_path).read_text(encoding="utf-8")
-    elif file_path.endswith(".pdf"):
-        from PyPDF2 import PdfReader
-        with open(file_path, "rb") as f:
-            return "\n".join(page.extract_text() or '' for page in PdfReader(f).pages)
-    elif file_path.endswith(".docx"):
-        import docx
-        doc = docx.Document(file_path)
+def extract_text(file_stream: BytesIO, filename: str) -> str:
+    if filename.endswith(".txt"):
+        return file_stream.read().decode("utf-8")
+    elif filename.endswith(".pdf"):
+        reader = PdfReader(file_stream)
+        return "\n".join(page.extract_text() or '' for page in reader.pages)
+    elif filename.endswith(".docx"):
+        doc = Document(file_stream)
         return "\n".join(p.text for p in doc.paragraphs)
     return ""
-
-def get_uploaded_files():
-    try:
-        with open("data/file_list.txt", "r") as f:
-            filenames = f.read().strip().split("\n")
-            return [os.path.join("data/uploaded_files", name) for name in filenames]
-    except FileNotFoundError:
-        return []
-
-def merge_all_files(filepaths):
-    return "\n\n".join(read_file_content(path) for path in filepaths)
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.get_json()
     user_prompt = data.get("prompt", "")
-    
-    files = get_uploaded_files()
-    context = merge_all_files(files)
-    
-    base_instruction = f"""
-        You are an assistant that only answers based on the following content.
-        If a user greets you, reply politely.
-        If the question isn't covered, respond: " I couldn't find an answer for that topic.You can reach our support team directly for further help."
-        Content:
-        {context}
-    """
-    final_prompt = f"{base_instruction}\n\n{user_prompt}"
-    
+
     try:
+        drive_files = list_files_from_drive()
+        full_context = ""
+
+        for file in drive_files:
+            file_id = file['id']
+            filename = file['name']
+            if filename.endswith(('.pdf', '.docx', '.txt')):
+                file_stream = download_file_from_drive(file_id)
+                file_text = extract_text(file_stream, filename)
+                full_context += f"\n\n{file_text}"
+        print("full_context")
+        base_instruction = f"""
+        You are an assistant that only answers based on the following content give response very fast with in milisecond.
+        If a user greets you, reply politely.
+        If the question isn't covered, respond: " I couldn't find an answer for that topic. You can reach our support team directly for further help."
+        Content:
+        {full_context}
+        """
+
+        final_prompt = f"{base_instruction}\n\n{user_prompt}"
+
         response = chat_session.send_message(final_prompt)
         return jsonify({"response": response.text})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/upload", methods=["POST"])
 def upload_document():
     if "file" not in request.files:
-        return jsonify({"error": "No files part in the request"}), 400
+        return jsonify({"error": "No file part in the request"}), 400
 
     files = request.files.getlist("file")
-
     if not files:
         return jsonify({"error": "No file selected"}), 400
 
@@ -91,68 +83,61 @@ def upload_document():
     for file in files:
         if file and file.filename.lower().endswith((".pdf", ".docx", ".txt")):
             filename = secure_filename(file.filename)
-            save_path = os.path.join(UPLOAD_DIR, filename)
-            file.save(save_path)
-            uploaded_files.append(filename)
+            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-            # Update file_list.txt
-            if os.path.exists(FILE_LIST_PATH):
-                with open(FILE_LIST_PATH, "r") as f:
-                    existing = f.read().splitlines()
-            else:
-                existing = []
+            # Ensure stream is at start
+            file.stream.seek(0)
+            result = upload_file_to_drive(file.stream, filename, mimetype)
 
-            if filename not in existing:
-                with open(FILE_LIST_PATH, "a") as f:
-                    f.write(filename + "\n")
+            uploaded_files.append({
+                "filename": filename,
+                "drive_file_id": result["id"],
+                "drive_link": result["webViewLink"]
+            })
         else:
             unsupported_files.append(file.filename)
-    print(len(uploaded_files))
+
     return jsonify({
         "uploaded": uploaded_files,
         "unsupported": unsupported_files
-    }), 200
+    })
 
-# ✅ Admin UI
+@app.route("/api/drive-files", methods=["GET"])
+def get_drive_files():
+    try:
+        files = list_files_from_drive()
+        return jsonify(files)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/", methods=["GET", "POST"])
 def admin_upload_ui():
     if request.method == "POST":
         files = request.files.getlist("file")
-        
         if not files:
             flash("No files selected.")
             return redirect(request.url)
 
-        uploaded_files = []
-        unsupported_files = []
-        
+        uploaded = []
+        unsupported = []
+
         for file in files:
             if file.filename.lower().endswith((".pdf", ".docx", ".txt")):
                 filename = secure_filename(file.filename)
-                file.save(os.path.join(UPLOAD_DIR, filename))
-                uploaded_files.append(filename)
-
-                # Update file_list.txt
-                if os.path.exists(FILE_LIST_PATH):
-                    with open(FILE_LIST_PATH, "r") as f:
-                        existing = f.read().splitlines()
-                else:
-                    existing = []
-
-                if filename not in existing:
-                    with open(FILE_LIST_PATH, "a") as f:
-                        f.write(filename + "\n")
+                mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+                file.stream.seek(0)
+                upload_file_to_drive(file.stream, filename, mimetype)
+                uploaded.append(filename)
             else:
-                unsupported_files.append(file.filename)
+                unsupported.append(file.filename)
 
-        if uploaded_files:
-            flash(f"Files uploaded successfully: {', '.join(uploaded_files)}")
-        if unsupported_files:
-            flash(f"Unsupported files: {', '.join(unsupported_files)}")
-
+        if uploaded:
+            flash(f"Uploaded: {', '.join(uploaded)}")
+        if unsupported:
+            flash(f"Unsupported: {', '.join(unsupported)}")
         return redirect(url_for("admin_upload_ui"))
     return render_template("upload.html")
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Default to port 5000 if not set
-    app.run(debug=True, host="0.0.0.0", port=port)
 
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)

@@ -1,0 +1,291 @@
+/* .chat {
+    width: 300px;
+    height: 300px;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    margin: auto;
+    background-color: aqua;
+    position: relative;
+    top: 50px;
+}
+
+.chat input {
+    width: 75%;
+    padding: 8px;
+    border: none;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.chat button {
+    padding: 9.5px;
+    border: none;
+    border-radius: 30px;
+    background: #37ccfd;
+    color: white;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.chat__container img {
+    width: 100px;
+    height: 100px;
+} */
+
+/* sdsf */
+
+.try-it {
+    overflow: hidden;
+    text-align: center;
+    /* width: 100%; */
+    height: 100%;
+    padding-bottom: 24px;
+    padding-top: 32px;
+    margin: 5px;
+    background: linear-gradient(180deg, #7729aa -13.13%, #170a2d 0.17%, #0a061d 6.9%, rgba(10, 6, 30, 0.99) 36.38%, #010311 98.59%) !important;
+}
+
+.model-card {
+    backdrop-filter: blur(24px);
+    border-radius: 32px;
+    margin: auto;
+    margin-bottom: 30px;
+    width: 99%;
+    max-width: 1100px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+}
+
+.model-card-container {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    padding: 24px;
+}
+
+.image-input {
+    max-width: 310px;
+    box-sizing: border-box;
+    /* display: flex; */
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin-left: 0px;
+    padding-left: 0px;
+    margin-right: 24px;
+    padding-right: 0px;
+    margin-top: 0px;
+}
+
+.image-output {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    /* display: flex; */
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin-left: 0px;
+    padding-left: 0px;
+    margin-right: 0px;
+    padding-right: 0px;
+    padding-top: 0px;
+}
+ #progressContainer {
+    width: 100%;
+    height: 10px;
+    margin: 5px;
+}
+.try-it-result-error {
+    text-align: left;
+    font-size: 12px;
+    color: #ee7a7a;
+    margin: auto;
+    padding: 10px 0px;
+}
+
+#place_holder_picture_model {
+    height: 380px;
+    width:  380px;
+}
+.try-it-result-area {
+    height: 380px;
+    width:  380px;
+    text-align: left;
+    border-radius: 8px;
+    background-color: transparent;
+    margin: auto;
+    color: #fff;
+}
+.try-it-result-area img {
+    border-radius: 12px;
+    background-color: rgba(17, 13, 35, 1);
+}
+.model-input-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    border-radius: 12px;
+}
+
+.outline-try-it {
+    display: flex;
+    flex-direction: row;
+}
+
+.create-image-header {
+    padding-top: 0px;
+}
+
+.try-it h2 {
+    color: #ffffff;
+    margin: 0px;
+    padding: 12px;
+    padding-left: 0px;
+    font-size: 18px;
+    font-weight: initial;
+    padding-top: 0px;
+    white-space: nowrap;
+}
+.model-input-text-input {
+    margin-bottom: 8px;
+}
+.try-it textarea {
+    box-sizing: border-box;
+    height: 70px;
+    width: 100%;
+    padding: 12px 12px;
+    font-size: 1em;
+    border-radius: 12px;
+    border: 1px solid rgba(74, 66, 97, 1);
+    background: rgba(45, 40, 60, 1);
+    color: white;
+    margin: 10px;
+    margin-top: 0px;
+    margin-bottom: 25px;
+    font-family: inherit;
+    resize: none;
+    overflow: hidden;
+}
+#model-submit-button-container {
+    width: inherit;
+    display: flex
+;
+}
+#modelSubmitButton {
+    padding: 10px 19px;
+    font-size: 18px;
+    border-radius: 45px;
+    border: none;
+    vertical-align: bottom;
+    white-space: nowrap;
+    color: white;
+    background: #8F37FF;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 8px;
+}
+#model-options-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 0;
+    height: 0;
+    position: absolute;
+    visibility: hidden;
+}
+.edit-buttons-container {
+    display: flex
+;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+}
+.extra-models-buttons {
+    display: flex
+;
+    flex-direction: row;
+    height: auto;
+    width: 100%;
+    margin-top: 8px;
+    gap: 8px;
+}
+#edit-options[imagewasGenerated=True] {
+    display: block;
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    background-color: rgba(45, 40, 60, 1);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    -moz-appearance: none;
+    /* background-image: url(data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="10" viewBox="0 0 14 10"><path fill="none" stroke="%23666" stroke-width="2" d="M1 1l6 6 6-6"/></svg>); */
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+    background-position: calc(100% - 16px);
+    height: 50%;
+}
+#edit-button, #share-model-image, #edit-options {
+    display: none;
+    margin: 4px;
+}
+button, input, optgroup, select, textarea {
+    font-family: 'Atkinson Hyperlegible', sans-serif;
+    font-size: 100%;
+    line-height: 1.15;
+    margin: 0;
+}
+#edit-button[imagewasGenerated=True] {
+    display: block;
+    padding: 13px 19px;
+    font-size: 16px;
+    border-radius: 45px;
+    border: none;
+    white-space: nowrap;
+    color: white;
+    background: #8F37FF;
+    cursor: point
+}
+
+button:disabled {
+  background-color: #d3d3d3; /* light gray */
+  color: #777;              /* optional: make text lighter */
+  cursor: not-allowed;
+  opacity: 0.6;             /* slightly transparent */
+}
+#modelSubmitButton:disabled {
+  background-color: #e0e0e0;
+  color: #888;
+}
+button {
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+}
+
+.download-icon{
+        width: 20px;
+}
+#download-button{
+    border: none;
+    border-radius: 10px;
+    /* width: 20px; */
+    position: relative;
+    left: 93%;
+}
+.upload-image{
+    width: 50px;
+}
+.upload-input{
+        position: relative;
+    opacity: 0;
+    /* width: 50px; */
+    bottom: 36px;
+}

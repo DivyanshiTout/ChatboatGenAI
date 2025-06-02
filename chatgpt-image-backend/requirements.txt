@@ -1,0 +1,7 @@
+fal_client
+dotenv
+gtts
+flask_cors
+flask
+pillow
+pytesseract

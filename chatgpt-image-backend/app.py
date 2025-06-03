@@ -8,7 +8,7 @@ import fal_client
 import requests
 from PIL import Image
 import pytesseract
-from faster_whisper import WhisperModel
+
 
 app = Flask(__name__)
 CORS(app)
@@ -113,13 +113,13 @@ def image_to_text():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-model = WhisperModel("base")
-
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
     if 'audio' not in request.files:
         return jsonify({"error": "No audio file uploaded"}), 400
-
+    from faster_whisper import WhisperModel  # Import inside
+    model = WhisperModel("base") 
+    
     audio_file = request.files['audio']
     file_path = os.path.join("temp", audio_file.filename)
 

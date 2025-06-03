@@ -22,7 +22,7 @@ export default function AudioToText() {
 
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/transcribe", formData);
+      const res = await axios.post("https://text-to-imagegenrate.onrender.com/transcribe", formData);
       setText(res.data.text);
       setSubmitted(true);
     } catch (err) {

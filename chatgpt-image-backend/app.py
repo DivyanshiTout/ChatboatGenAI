@@ -118,7 +118,7 @@ def transcribe_audio():
     if 'audio' not in request.files:
         return jsonify({"error": "No audio file uploaded"}), 400
     from faster_whisper import WhisperModel  # Import inside
-    model = WhisperModel("base") 
+    model = WhisperModel("base", compute_type="int8", device="cpu") 
     
     audio_file = request.files['audio']
     file_path = os.path.join("temp", audio_file.filename)

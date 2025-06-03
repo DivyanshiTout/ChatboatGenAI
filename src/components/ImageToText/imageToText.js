@@ -49,7 +49,7 @@ export default function ImageToText() {
         ) : (
           <div style={styles.output}>
             <h4>Extracted Text:</h4>
-            <p>{text}</p>
+            <p style={styles.showText}>{text}</p>
           </div>
         )}
       </div>
@@ -93,4 +93,8 @@ const styles = {
     marginTop: 20,
     textAlign: "left",
   },
+showText: {
+  overflow: "auto",
+  maxHeight: "180px"
+},
 };

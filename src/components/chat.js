@@ -17,7 +17,7 @@ function Chat() {
   const handleSubmit = async () => {
     try {
       setLoadingImage(true);
-      const response = await axios.post("http://localhost:5000/generate", {
+      const response = await axios.post("https://text-to-imagegenrate.onrender.com/generate", {
         prompt,
       });
       if (response.data.image) {
@@ -32,7 +32,7 @@ function Chat() {
   const handleAudio = async () => {
     try {
       setLoadingAudio(true);
-      const response = await axios.post("http://localhost:5000/audio", {
+      const response = await axios.post("https://text-to-imagegenrate.onrender.com/audio", {
         prompt,
       });
       if (response.data.audio) {
